@@ -40,7 +40,7 @@ def fitCut(hist, sigmas, opts):
 
 
 
-def makeProfile(TH2F_name, lnBins, fitType, drawBinPlots):
+def makeProfile(TH2F_name, lnBins, fitType, drawBinPlots, meanRange, sigmaRange):
 	TH2F_temp_input = []
 	TH1F_fit_mean_output = []
 	TH1F_fit_sigma_output = []
@@ -64,6 +64,7 @@ def makeProfile(TH2F_name, lnBins, fitType, drawBinPlots):
 		TH1F_fit_sigma_output.append(TH1F("{}_{}_sigma".format(histo.GetName(),histoCount) , "{} {} ;{};{} fit #sigma".format(histo.GetTitle(),widthType ,histo.GetXaxis().GetTitle(), histo.GetYaxis().GetTitle()), lnBins, histoBounds[0], histoBounds[1])) 
 	
 	for bins in range(lnBins):
+		temp = []
 		for fileCount, histo in enumerate(TH2F_temp_input):
 				histoBounds = histo.GetXaxis().GetXmin(), histo.GetXaxis().GetXmax()
 				length = histoBounds[1] -  histoBounds[0] + 0.0
@@ -74,14 +75,14 @@ def makeProfile(TH2F_name, lnBins, fitType, drawBinPlots):
 				boundsBins = bins*widthBins, (bins+1)*widthBins
 				bounds = minValue + bins*width, minValue + (bins+1)*width
 	#
-				boundsValue = histoBounds[0]+ (lnBins+.0)/length*bins, histoBounds[0]+ (lnBins+.0)/length*(bins+1)
+				boundsValue = histoBounds[0]+ length/(lnBins+.0)*bins, histoBounds[0]+ length/(lnBins+.0)*(bins+1)
 
-				temp = histo.ProjectionY("temp",boundsBins[0], boundsBins[1], "")
-				temp.SetLineColor(fileCount)
+				temp.append(histo.ProjectionY("temp_{:b}".format(fileCount),boundsBins[0], boundsBins[1], ""))
+				temp[fileCount].SetLineColor(fileCount)
 				if fitType == "gaus":
 					#temp.Fit("gaus","QC")
-					fitCut(temp, nGausFit, "QC")
-					values = getFitParamsGauss(temp)
+					fitCut(temp[fileCount], nGausFit, "QC")
+					values = getFitParamsGauss(temp[fileCount])
 					#print values[2], values[3], getFitParamsGauss
 					TH1F_fit_mean_output[fileCount].SetBinContent(bins, values[2])
 					TH1F_fit_mean_output[fileCount].SetBinError(bins, values[3])
@@ -90,23 +91,39 @@ def makeProfile(TH2F_name, lnBins, fitType, drawBinPlots):
 				if fitType != "gaus":
 					#fitCut(temp, nGausFit, "")
 					#temp.Fit("gaus","QC")
-					values = temp.GetMean(), temp.GetMeanError(), temp.GetRMS(), temp.GetRMSError()
+					values = temp[fileCount].GetMean(), temp[fileCount].GetMeanError(), temp[fileCount].GetRMS(), temp[fileCount].GetRMSError()
 					#print values[2], values[3], getFitParamsGauss
 					TH1F_fit_mean_output[fileCount].SetBinContent(bins, values[0])
 					TH1F_fit_mean_output[fileCount].SetBinError(bins, values[1])
 					TH1F_fit_sigma_output[fileCount].SetBinContent(bins, values[2])
 					TH1F_fit_sigma_output[fileCount].SetBinError(bins, values[3])
 
-				if drawBinPlots: 
-					temp.Draw()
-					c1.SaveAs('{}_from_{}_to_{}_{}.png'.format(TH2F_name,boundsValue[0],boundsValue[1],histo.GetXaxis().GetTitle()))
+					#on last file draw plots
+				if drawBinPlots and fileCount +1 == len(TH2F_temp_input): 
+					for count, binHisto in enumerate(temp):
+						binHisto.SetLineColor(colors[count])
+						if count == 0: 
+							print binHisto.GetMean()
+							binHisto.Draw()
+						if count > 0: 
+							print binHisto.GetMean()
+							binHisto.Draw("same")
+
+					titleString = histo.GetXaxis().GetTitle().replace("{", "")
+					titleString = titleString.replace("}", "")
+					titleString = titleString.replace("_", "")
+
+					c1.SaveAs('{}_{}_from_{:0.3f}_to_{:0.3f}_{}.png'.format(TH2F_name,fitType, boundsValue[0],boundsValue[1],titleString ))
 				
+					#print "%s_from_%0.3f_to_%0.3f_%s" % (TH2F_name,boundsValue[0],boundsValue[1],histo.GetXaxis().GetTitle())
+	temp = []
 	
 	for TH2FCount, histo in enumerate(TH1F_fit_mean_output):
 		#print TH2FCount, histo.GetBinContent(3)
 		histo.SetLineColor(colors[TH2FCount])
 		#for i in range(histo.GetlNbinsX())
 		#	print histo.GetBinContent()
+		histo.GetYaxis().SetRangeUser(meanRange[0], meanRange[1])
 		if TH2FCount == 0: histo.Draw()
 		if TH2FCount > 0: histo.Draw("same")
 
@@ -120,6 +137,7 @@ def makeProfile(TH2F_name, lnBins, fitType, drawBinPlots):
 	for TH2FCount, histo in enumerate(TH1F_fit_sigma_output):
 		#print TH2FCount, histo.GetBinContent(3)
 		histo.SetLineColor(colors[TH2FCount])
+		histo.GetYaxis().SetRangeUser(sigmaRange[0], sigmaRange[1])
 		#for i in range(histo.GetlNbinsX())
 		#	print histo.GetBinContent()
 		if TH2FCount == 0: histo.Draw()
