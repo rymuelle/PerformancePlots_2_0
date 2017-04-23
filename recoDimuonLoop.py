@@ -10,7 +10,8 @@ for counter, event in enumerate(recoDimuons):
 	##
 
 	if ( event.sta and event.glb and event.pos_glb_trk_pt > thresholdPt and event.neg_glb_trk_pt > thresholdPt):
-		print event.sta_m
+		if verbosity > 10:
+			print "sta m " , event.sta_m
 
 
 

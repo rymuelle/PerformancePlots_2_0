@@ -11,7 +11,10 @@ outFile = TFile(fileOut, "recreate")
 
 #leadingMuonPt = TH1F("leadingMuonPt", "leading #mu p_{T}; p_{T}; counts", 100, 0, 1000)
 
+verbosity = 0
+
 isMC = False
+
 
 ptBins = 50
 ptMin = 0
@@ -28,8 +31,10 @@ etaMin = -3
 etaMax = 3
 
 ptResBins = 50
-ptResMin = -0.7
-ptResMax = 0.7
+ptResMin = -0.1
+ptResMax = 0.1
+#ptResMin = -0.7 for other definition as seen in code but commented out
+#ptResMax = 0.7
 
 
 
@@ -70,8 +75,8 @@ TH1F_glb_nChi2_barrel = TH1F("TH1F_glb_nChi2_barrel", "glb n#chi^{2} |#eta| < 0.
 ## ptRes
 ##
 
-TH2F_glb_gen_eta_ptRes = TH2F("glb_gen_eta_v_ptRes"," glb vs gen p_{T}Res ;#eta;pTRes",etaBins, etaMin, etaMax ,ptResBins, ptResMin, ptResMax )
-TH2F_glb_gen_phi_ptRes = TH2F("glb_gen_phi_v_ptRes"," glb vs gen p_{T}Res ;#phi;pTRes",phiBins, phiMin, phiMax ,ptResBins, ptResMin, ptResMax )
+TH2F_glb_sta_eta_ptRes = TH2F("glb_sta_eta_v_ptRes"," glb vs sta p_{T}Res ;#eta;pTRes",etaBins, etaMin, etaMax ,ptResBins, ptResMin, ptResMax )
+TH2F_glb_sta_phi_ptRes = TH2F("glb_sta_phi_v_ptRes"," glb vs sta p_{T}Res ;#phi;pTRes",phiBins, phiMin, phiMax ,ptResBins, ptResMin, ptResMax )
 
 
 
