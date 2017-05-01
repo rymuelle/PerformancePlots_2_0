@@ -5,7 +5,10 @@ import  math, sys
 from ROOT import TLorentzVector
 from random import randint
 
-#python make_2d_plots.py ../MuAlAnalyzer/MuAlRefit_ZPrimeToMuMu_m_5000_200k_RECOSIM_6DOF_ideal_APEcov/MuAlRefit_ZPrimeToMuMu_m_5000_200k_RECOSIM_6DOF_ideal_APEcov.root out_new.root -b
+#python make_2d_plots.py ../MuAlAnalyzer/MuAlRefit_ZPrimeToMuMu_m_5000_200k_RECOSIM_6DOF_ideal_APEcov/MuAlRefit_ZPrimeToMuMu_m_5000_200k_RECOSIM_6DOF_ideal_APEcov.root 6DOF_ideal_cov.root -b
+#python make_2d_plots.py ../MuAlAnalyzer/MuAlRefit_ZPrimeToMuMu_m_5000_2k_RECOSIM_6DOF_ideal_diag/MuAlRefit_ZPrimeToMuMu_m_5000_200k_RECOSIM_6DOF_ideal_diag.root 6DOF_ideal_diag.root -b
+#python make_2d_plots.py ../MuAlAnalyzer/3DOF_diag_ZPrimeToMuMu_m_5000_200k_RECOSIM/3DOF_diag_ZPrimeToMuMu_m_5000_200k_RECOSIM.root 3DOF.root -b
+
 
 # input arguments, first is input root file, second is output root file 
 fileIn = sys.argv[1]

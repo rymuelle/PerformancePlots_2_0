@@ -45,6 +45,7 @@ def makeProfile(TH2F_name, lnBins, fitType, drawBinPlots, meanRange, sigmaRange)
 	TH1F_fit_mean_output = []
 	TH1F_fit_sigma_output = []
 
+
 	
 
 	widthType = "RMS"
@@ -70,38 +71,51 @@ def makeProfile(TH2F_name, lnBins, fitType, drawBinPlots, meanRange, sigmaRange)
 				length = histoBounds[1] -  histoBounds[0] + 0.0
 				lengthBins = histo.GetNbinsX() #-  histo.GetlNbinsX() + 0.0
 				width = length/lnBins
-				widthBins = lengthBins/lnBins
+				widthBins = (lengthBins+.0)/(lnBins +.0)
 				minValue = histo.GetXaxis().GetXmin()
-				boundsBins = bins*widthBins, (bins+1)*widthBins
+				boundsBins = int(bins*widthBins), int((bins+1)*widthBins)
 				bounds = minValue + bins*width, minValue + (bins+1)*width
 	#
 				boundsValue = histoBounds[0]+ length/(lnBins+.0)*bins, histoBounds[0]+ length/(lnBins+.0)*(bins+1)
-
+				#print lengthBins, lnBins, widthBins,  boundsBins, bins, boundsValue
 				temp.append(histo.ProjectionY("temp_{:b}".format(fileCount),boundsBins[0], boundsBins[1], ""))
 				temp[fileCount].SetLineColor(fileCount)
-				if fitType == "gaus":
+
+				temp[fileCount].Sumw2()
+				if temp[fileCount].Integral() > 0: temp[fileCount].Scale(1.0/temp[fileCount].Integral())
+				if fitType == "gaus" and temp[fileCount].GetEntries() > 20:
 					#temp.Fit("gaus","QC")
 					fitCut(temp[fileCount], nGausFit, "QC")
 					values = getFitParamsGauss(temp[fileCount])
 					#print values[2], values[3], getFitParamsGauss
-					TH1F_fit_mean_output[fileCount].SetBinContent(bins, values[2])
-					TH1F_fit_mean_output[fileCount].SetBinError(bins, values[3])
-					TH1F_fit_sigma_output[fileCount].SetBinContent(bins, values[4])
-					TH1F_fit_sigma_output[fileCount].SetBinError(bins, values[5])
+					TH1F_fit_mean_output[fileCount].SetBinContent(bins+1, values[2])
+					TH1F_fit_mean_output[fileCount].SetBinError(bins+1, values[3])
+					TH1F_fit_sigma_output[fileCount].SetBinContent(bins+1, values[4])
+					TH1F_fit_sigma_output[fileCount].SetBinError(bins+1, values[5])
+					#print boundsValue, bins, temp[fileCount].GetEntries()
+					if verbose > 10:
+						print meanType, " ", values[2]
+						print widthType, " ", values[4]
 				if fitType != "gaus":
 					#fitCut(temp, nGausFit, "")
 					#temp.Fit("gaus","QC")
 					values = temp[fileCount].GetMean(), temp[fileCount].GetMeanError(), temp[fileCount].GetRMS(), temp[fileCount].GetRMSError()
 					#print values[2], values[3], getFitParamsGauss
-					TH1F_fit_mean_output[fileCount].SetBinContent(bins, values[0])
-					TH1F_fit_mean_output[fileCount].SetBinError(bins, values[1])
-					TH1F_fit_sigma_output[fileCount].SetBinContent(bins, values[2])
-					TH1F_fit_sigma_output[fileCount].SetBinError(bins, values[3])
+					TH1F_fit_mean_output[fileCount].SetBinContent(bins+1, values[0])
+					TH1F_fit_mean_output[fileCount].SetBinError(bins+1, values[1])
+					TH1F_fit_sigma_output[fileCount].SetBinContent(bins+1, values[2])
+					TH1F_fit_sigma_output[fileCount].SetBinError(bins+1, values[3])
+				
+
+					
 
 					#on last file draw plots
 				if drawBinPlots and fileCount +1 == len(TH2F_temp_input): 
 					for count, binHisto in enumerate(temp):
-						binHisto.SetLineColor(colors[count])
+						#binHisto.SetLineColor(colors[count])
+						#binHisto.SetMarkerStyle(1)
+						setHistoStyle(binHisto, colors[count] )
+						#if binHisto.GetEntries() > 0: binHisto.Scale(1.0/binHisto.GetEntries())
 						if count == 0: 
 							print binHisto.GetMean()
 							binHisto.Draw()
@@ -112,43 +126,89 @@ def makeProfile(TH2F_name, lnBins, fitType, drawBinPlots, meanRange, sigmaRange)
 					titleString = histo.GetXaxis().GetTitle().replace("{", "")
 					titleString = titleString.replace("}", "")
 					titleString = titleString.replace("_", "")
+					titleString = titleString.replace("#", "")
+					binlegend =  TLegend(0.12,0.68,0.5,0.88)
+					makeLegend(binlegend, temp)
 
 					c1.SaveAs('{}_{}_from_{:0.3f}_to_{:0.3f}_{}.png'.format(TH2F_name,fitType, boundsValue[0],boundsValue[1],titleString ))
 				
 					#print "%s_from_%0.3f_to_%0.3f_%s" % (TH2F_name,boundsValue[0],boundsValue[1],histo.GetXaxis().GetTitle())
 	temp = []
-	
-	for TH2FCount, histo in enumerate(TH1F_fit_mean_output):
-		#print TH2FCount, histo.GetBinContent(3)
-		histo.SetLineColor(colors[TH2FCount])
-		#for i in range(histo.GetlNbinsX())
-		#	print histo.GetBinContent()
-		histo.GetYaxis().SetRangeUser(meanRange[0], meanRange[1])
-		if TH2FCount == 0: histo.Draw()
-		if TH2FCount > 0: histo.Draw("same")
-
-	legend =  TLegend(0.1,0.7,0.48,0.9)
-	for TH2FCount, histo in enumerate(TH1F_fit_mean_output):
-		legend.AddEntry(histo,fileListName[TH2FCount],"lep")
-	legend.Draw()
-	
+	legend =  TLegend(0.12,0.68,0.5,0.88)
+	drawProfile(TH1F_fit_mean_output, meanRange, legend)
 	c1.SaveAs('{}_{}_mean.png'.format(TH2F_name, fitType))
 
-	for TH2FCount, histo in enumerate(TH1F_fit_sigma_output):
-		#print TH2FCount, histo.GetBinContent(3)
-		histo.SetLineColor(colors[TH2FCount])
-		histo.GetYaxis().SetRangeUser(sigmaRange[0], sigmaRange[1])
-		#for i in range(histo.GetlNbinsX())
-		#	print histo.GetBinContent()
+	legendRMS =  TLegend(0.12,0.68,0.5,0.88)
+	drawProfile(TH1F_fit_sigma_output, sigmaRange, legendRMS)
+	c1.SaveAs('{}_{}_sigma.png'.format(TH2F_name, fitType))
+
+
+
+
+
+def drawProfile(l_histogram, range,l_legend):
+	for TH2FCount, histo in enumerate(l_histogram):
+
+		setHistoStyle(histo, colors[TH2FCount])
+
+		histo.GetYaxis().SetRangeUser(range[0], range[1])
+		histo.GetYaxis().SetTitleOffset(1.4)
 		if TH2FCount == 0: histo.Draw()
 		if TH2FCount > 0: histo.Draw("same")
 
-	legendRMS =  TLegend(0.1,0.7,0.48,0.9)
-	for TH2FCount, histo in enumerate(TH1F_fit_mean_output):
-		legendRMS.AddEntry(histo,fileListName[TH2FCount],"lep")
-	legendRMS.Draw()
 	
-	c1.SaveAs('{}_{}_sigma.png'.format(TH2F_name, fitType))
+	makeLegend(l_legend, l_histogram)
+
+
+
+
+def draw1D(l_histogram, range,l_legend):
+	for TH2FCount, histo in enumerate(l_histogram):
+
+		setHistoStyle(histo, colors[TH2FCount])
+
+		histo.SetStats(0)
+		histo.GetYaxis().SetTitleOffset(1.4)
+		if TH2FCount == 0: histo.Draw()
+		if TH2FCount > 0: histo.Draw("same")
+
+	
+	makeLegend(l_legend, l_histogram)
+	
+
+def setHistoStyle(histogram, color):
+	histogram.SetLineColor(color)
+	histogram.SetMarkerStyle(8)
+	histogram.SetMarkerColor(color)
+	histogram.SetMarkerSize(.5)
+
+
+def makeLegend(legend, histogram):
+	legend.SetTextSize(0.03)
+	legend.SetFillStyle(0)
+	legend.SetHeader(histogram[0].GetTitle())
+	for TH2FCount, histo in enumerate(histogram):
+		legend.AddEntry(histo,fileListName[TH2FCount],"lep")
+	legend.Draw()
+
+
+
+
+def make1D(TH1F_name):
+	TH1F_temp_input = []
+
+
+	for fileCount, file in enumerate(files):
+		TH1F_temp_input.append(file.Get(TH1F_name))
+
+	histoBounds = TH1F_temp_input[0].GetXaxis().GetXmin(), TH1F_temp_input[0].GetXaxis().GetXmax()
+	
+	temp = []
+	legend =  TLegend(0.62,0.68,0.9,0.88)
+	draw1D(TH1F_temp_input, histoBounds, legend)
+	c1.SaveAs('{}.png'.format(TH1F_name))
+
+
 
 
 
